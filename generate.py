@@ -88,7 +88,7 @@ def generate(args):
     with open(args.tempfile, 'w') as f:
         f.write(res)
     os.chmod(args.tempfile, stat.S_IREAD | stat.S_IWRITE)
-    res = os.system('echo | maildrop ' + os.path.abspath(args.tempfile))
+    res = os.system('echo | EXT={} maildrop {}'.format(args.testuser, os.path.abspath(args.tempfile)))
     if res == 0:
         os.rename(args.tempfile, args.destination)
 
@@ -96,6 +96,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate a config file for maildrop.")
     parser.add_argument('--config', '-c', default='mailfilter.cfg')
     parser.add_argument('--destination', '-d', default='filter')
+    parser.add_argument('--testuser', default='testuser')
     parser.add_argument('--tempfile', default='tempfilter')
     parser.add_argument('--template', '-t', default='/opt/uberspace/etc/spamfolder.template', help='Template to insert config into')
     args = parser.parse_args()
