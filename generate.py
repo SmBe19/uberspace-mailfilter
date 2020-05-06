@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import stat
 
 os.chdir(os.path.dirname(__file__))
 
@@ -86,6 +87,7 @@ def generate(args):
     res += template_parts[1]
     with open(args.tempfile, 'w') as f:
         f.write(res)
+    os.chmod(args.tempfile, stat.S_IREAD | stat.S_IWRITE)
     res = os.system('echo | maildrop ' + os.path.abspath(args.tempfile))
     if res == 0:
         os.rename(args.tempfile, args.destination)
