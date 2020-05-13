@@ -45,7 +45,7 @@ def read_config(config):
         elif line.startswith('f:'):
             froms.append(line[2:].strip())
         elif line.startswith('t:'):
-            froms.append(line[2:].strip())
+            tos.append(line[2:].strip())
         elif line.startswith('s:'):
             subjects.append(line[2:].strip())
         elif line.startswith('b:'):
