@@ -75,15 +75,15 @@ def generate(args):
         return
     with open(args.template) as f:
         template = f.read()
-    template_parts = template.split('to "$MAILDIR"')
-    if len(template_parts) > 2:
+    template_parts = template.split('# pipe to LDA and let Sieve handle the rest')
+    if len(template_parts) != 2:
         print('Template changed, can not generate configuration.')
         return
     res = template_parts[0] + '\n'
     for rule in cfg:
         res += rule.generate() + '\n'
     res += '\n'
-    res += '    to "$MAILDIR"'
+    res += '    # pipe to LDA and let Sieve handle the rest'
     res += template_parts[1]
     with open(args.tempfile, 'w') as f:
         f.write(res)
