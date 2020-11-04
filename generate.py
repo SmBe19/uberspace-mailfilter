@@ -75,11 +75,11 @@ def generate(args):
         return
     with open(args.template) as f:
         template = f.read()
-    template_parts = template.split('# pipe to LDA and let Sieve handle the rest')
+    template_parts = template.split('{\n    # pipe to LDA and let Sieve handle the rest')
     if len(template_parts) != 2:
         print('Template changed, can not generate configuration.')
         return
-    res = template_parts[0] + '\n'
+    res = template_parts[0] + '\n  {\n'
     for rule in cfg:
         res += rule.generate() + '\n'
     res += '\n'
