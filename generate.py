@@ -88,7 +88,7 @@ def generate(args):
     with open(args.tempfile, 'w') as f:
         f.write(res)
     os.chmod(args.tempfile, stat.S_IREAD | stat.S_IWRITE)
-    res = os.system('echo | EXT={} maildrop {}'.format(args.testuser, os.path.abspath(args.tempfile)))
+    res = os.system('echo | EXT={} UFLINE= RPLINE= DTLINE= maildrop {}'.format(args.testuser, os.path.abspath(args.tempfile)))
     if res == 0:
         os.rename(args.tempfile, args.destination)
 
