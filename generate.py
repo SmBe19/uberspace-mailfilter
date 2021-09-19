@@ -27,7 +27,7 @@ class Rule:
             add_subrule('/^To: {}/:h'.format(to) for to in self.tos)
         if self.subjects:
             add_subrule('/^Subject: {}/:h'.format(subject) for subject in self.subjects)
-        if self.subjects:
+        if self.bodies:
             add_subrule('/{}/:b'.format(body) for body in self.bodies)
         cond = ' && '.join(rules)
         return '{indent}if ( {cond} )\n{indent}{{\n{indent}  DEST="$MAILDIR/{dest}"\n{indent}  `test -d "$DEST" || maildirmake "$DEST"`\n{indent}  to "$DEST"\n{indent}}}\n'.format(cond=cond, dest=self.dest, indent='    ')
