@@ -7,30 +7,42 @@ os.chdir(os.path.dirname(__file__))
 
 class Rule:
 
-    def __init__(self, froms, tos, subjects, bodies, dest):
+    def __init__(self, froms, tos, subjects, bodies, dest, forward):
         self.froms = froms
         self.tos = tos
         self.subjects = subjects
         self.bodies = bodies
         self.dest = dest
+        self.forward = forward
 
     def __repr__(self):
-        return '<Rule: f:{}, t:{} s:{} b:{} -> {}>'.format(self.froms, self.tos, self.subjects, self.bodies, self.dest)
+        return '<Rule: f:{}, t:{} s:{} b:{} -> {} ---> {}>'.format(self.froms, self.tos, self.subjects, self.bodies, self.dest, self.forward)
 
     def generate(self):
+        if self.forward:
+            action = 'redirect "{}";'.format(self.forward)
+        else:
+            action = 'fileinto "{}";'.format(self.dest)
         rules = []
         def add_subrule(subrules):
-            rules.append('({})'.format(' || '.join(subrules)))
+            subs = list(subrules)
+            if len(subs) == 1:
+                rules.append(subs[0])
+            else:
+                rules.append('anyof({})'.format(', '.join(subs)))
         if self.froms:
-            add_subrule('/^From: {}/:h'.format(fro) for fro in self.froms)
+            add_subrule('address :regex "from" "{}"'.format(fro) for fro in self.froms)
         if self.tos:
-            add_subrule('/^To: {}/:h'.format(to) for to in self.tos)
+            add_subrule('address :regex "to" "{}"'.format(to) for to in self.tos)
         if self.subjects:
-            add_subrule('/^Subject: {}/:h'.format(subject) for subject in self.subjects)
+            add_subrule('header :regex "subject" "{}"'.format(subject) for subject in self.subjects)
         if self.bodies:
-            add_subrule('/{}/:b'.format(body) for body in self.bodies)
-        cond = ' && '.join(rules)
-        return '{indent}if ( {cond} )\n{indent}{{\n{indent}  DEST="$MAILDIR/{dest}"\n{indent}  `test -d "$DEST" || maildirmake "$DEST"`\n{indent}  to "$DEST"\n{indent}}}\n'.format(cond=cond, dest=self.dest, indent='    ')
+            add_subrule('body :regex "{}"'.format(body) for body in self.bodies)
+        if not rules:
+            return action
+        if len(rules) == 1:
+            return 'if {} {{\n  {}\n  stop;\n}}'.format(rules[0], action)
+        return 'if allof({}) {{\n  {}\n  stop;\n}}'.format(', '.join(rules), action)
 
 def read_config(config):
     froms = []
@@ -50,12 +62,16 @@ def read_config(config):
             subjects.append(line[2:].strip())
         elif line.startswith('b:'):
             bodies.append(line[2:].strip())
+        elif line.startswith('--->'):
+            dest = line[4:].strip()
+            rules.append(Rule(froms, tos, subjects, bodies, None, dest))
+            froms = []
+            tos = []
+            subjects = []
+            bodies = []
         elif line.startswith('->'):
             dest = line[2:].strip()
-            if not froms and not tos and not subjects and not bodies:
-                print('No rule before destination')
-                return
-            rules.append(Rule(froms, tos, subjects, bodies, dest))
+            rules.append(Rule(froms, tos, subjects, bodies, dest, None))
             froms = []
             tos = []
             subjects = []
@@ -73,32 +89,17 @@ def generate(args):
         cfg = read_config(f.read())
     if not cfg:
         return
-    with open(args.template) as f:
-        template = f.read()
-    template_parts = template.split('{\n    # pipe to LDA and let Sieve handle the rest')
-    if len(template_parts) != 2:
-        print('Template changed, can not generate configuration.')
-        return
-    res = template_parts[0] + '\n  {\n'
-    for rule in cfg:
-        res += rule.generate() + '\n'
-    res += '\n'
-    res += '    # pipe to LDA and let Sieve handle the rest'
-    res += template_parts[1]
-    with open(args.tempfile, 'w') as f:
-        f.write(res)
-    os.chmod(args.tempfile, stat.S_IREAD | stat.S_IWRITE)
-    res = os.system('echo | EXT={} UFLINE= RPLINE= DTLINE= maildrop {}'.format(args.testuser, os.path.abspath(args.tempfile)))
-    if res == 0:
-        os.rename(args.tempfile, args.destination)
+    
+    with open(args.destination, 'w') as f:
+        print('require ["fileinto", "regex"];', file=f)
+        for rule in cfg:
+            print(rule.generate(), file=f)
+    os.system('sievec {}'.format(args.destination))
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate a config file for maildrop.")
+    parser = argparse.ArgumentParser(description="Generate a config file for sieve.")
     parser.add_argument('--config', '-c', default='mailfilter.cfg')
-    parser.add_argument('--destination', '-d', default='filter')
-    parser.add_argument('--testuser', default='testuser')
-    parser.add_argument('--tempfile', default='tempfilter')
-    parser.add_argument('--template', '-t', default='/opt/uberspace/etc/spamfolder.template', help='Template to insert config into')
+    parser.add_argument('--destination', '-d', default='~/users/catchall/sieve/filter.sieve')
     args = parser.parse_args()
     generate(args)
 

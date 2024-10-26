@@ -1,7 +1,9 @@
 # uberspace-mailfilter
 Mailfilter for Uberspace
 
-Write a config file `mailfilter.cfg`, then call `./generate.py` to generate the `maildrop` configuration file.
+Generates a sieve script based on a custom config.
+
+Write a config file `mailfilter.cfg`, then call `./generate.py` to generate and install the sieve script.
 
 The config file consists of several rule groups. Each rule group consists of one rule per line, followed by a destination. For rules of the same type, only one of them has to hold, for different types all have to hold. For the rules, regex are allowed. Comments with `#` are allowed at the line start.
 
