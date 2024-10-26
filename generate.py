@@ -90,11 +90,13 @@ def generate(args):
     if not cfg:
         return
     
-    with open(args.destination, 'w') as f:
+    destination = os.path.expanduser(args.destination)
+    
+    with open(destination, 'w') as f:
         print('require ["fileinto", "regex"];', file=f)
         for rule in cfg:
             print(rule.generate(), file=f)
-    os.system('sievec {}'.format(args.destination))
+    os.system('sievec {}'.format(destination))
 
 def main():
     parser = argparse.ArgumentParser(description="Generate a config file for sieve.")
