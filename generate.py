@@ -31,13 +31,13 @@ class Rule:
             else:
                 rules.append('anyof({})'.format(', '.join(subs)))
         if self.froms:
-            add_subrule('address :regex "from" "{}"'.format(fro) for fro in self.froms)
+            add_subrule('address :regex "from" "^{}$"'.format(fro) for fro in self.froms)
         if self.tos:
-            add_subrule('address :regex "to" "{}"'.format(to) for to in self.tos)
+            add_subrule('address :regex "to" "^{}$"'.format(to) for to in self.tos)
         if self.subjects:
-            add_subrule('header :regex "subject" "{}"'.format(subject) for subject in self.subjects)
+            add_subrule('header :regex "subject" "^{}$"'.format(subject) for subject in self.subjects)
         if self.bodies:
-            add_subrule('body :regex "{}"'.format(body) for body in self.bodies)
+            add_subrule('body :regex "^{}$"'.format(body) for body in self.bodies)
         if not rules:
             return action
         if len(rules) == 1:
